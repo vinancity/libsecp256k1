@@ -19,6 +19,7 @@ pub use libsecp256k1_core::*;
 use arrayref::{array_mut_ref, array_ref};
 use core::convert::TryFrom;
 use digest::{generic_array::GenericArray, Digest};
+use std::convert::TryInto;
 // use rand::Rng;
 
 #[cfg(feature = "std")]
@@ -484,7 +485,21 @@ impl core::fmt::LowerHex for SecretKey {
     }
 }
 
+fn pop32(barry: &[u8]) -> [u8; 32] {
+    barry.try_into().expect("slice with incorrect length")
+}
+
 impl Signature {
+    pub fn parse_rs(sig_r: &[u8], sig_s: &[u8]) -> Signature {
+        let mut r = Scalar::default();
+        let mut s = Scalar::default();
+
+        let _ = r.set_b32(&pop32(&sig_r));
+        let _ = s.set_b32(&pop32(&sig_s));
+
+        Signature { r, s }
+    }
+
     /// Parse an possibly overflowing signature.
     ///
     /// A SECP256K1 signature is usually required to be within 0 and curve
